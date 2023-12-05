@@ -3,11 +3,13 @@ import os
 from matplotlib import pyplot as plt
 import wandb
 print("Current Working Directory:", os.getcwd())
+#the code is tested on vscode interactive window
+
 
 #wandb.init(project="aml-final")
 
 data = np.load('../Datasets/pneumoniamnist.npz')
-print(list(data.keys()))
+#print(list(data.keys()))
 array1 = data['val_images'] 
 #plt.imshow(array1[0], cmap='gray')
 #plt.show()
@@ -38,11 +40,13 @@ train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True,drop_last=T
 val_loader = DataLoader(val_dataset, batch_size=64, drop_last=True)
 test_loader = DataLoader(test_dataset, batch_size=64)
 
+#check batch size
 #for i, batch in enumerate(train_loader):
    #print(i, batch[0].shape)
 #print(train_loader.dataset.tensors[0].shape)
 
-class ANN(nn.Module):
+#Simple model with linear layers
+class Net(nn.Module):
   def __init__(self):
     super(Net,self).__init__()
     self.fc1 = nn.Linear(784,128)
@@ -58,24 +62,7 @@ class ANN(nn.Module):
 input = torch.randn(64,784)
 model = Net()
 output = model(input)
-#print(output.shape)
 
-
-# Define a simple CNN model
-class SimpleCNN(nn.Module):
-    def __init__(self):
-        super(SimpleCNN, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1)
-        self.fc1 = nn.Linear(32 * 14 * 14, 1)  
-
-    def forward(self, x):
-        x = torch.relu(nn.functional.max_pool2d(self.conv1(x), 2))
-        #print("result after relu and maxpooling", x.shape)
-        x = x.view(-1, 32 * 14 * 14)
-        #print("result after view", x.shape)
-        x = torch.sigmoid(self.fc1(x))
-        #print("result after sig", x.shape)
-        return x
 
 # Initialize the model, loss function, and optimizer
 model = Net()
@@ -86,11 +73,9 @@ optimizer = optim.Adam(model.parameters(), lr=0.0001)
 for epoch in range(50):  # Number of epochs
     for images, labels in train_loader:
         
-        #print(images.shape)
         outputs = model(images.view(-1, 784))
 
         loss = criterion(outputs, labels)
-        #print(loss)
         optimizer.zero_grad()
         
         loss.backward()
@@ -107,7 +92,7 @@ for epoch in range(50):  # Number of epochs
             #print(predicted)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-            break
+            
         #wandb.log({"val_accuracy": correct / total})
         print(f'Epoch {epoch+1}, Validation Accuracy: {100*correct / total}%')
 

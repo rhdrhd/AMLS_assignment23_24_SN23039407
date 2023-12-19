@@ -1,0 +1,6 @@
+python = 3.11.5
+medmnist
+numpy
+matplotlib
+wandb
+torch

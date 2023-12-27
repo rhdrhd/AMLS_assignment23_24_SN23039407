@@ -4,6 +4,9 @@ from utils import *
 import matplotlib.pyplot as plt
 from sklearn.model_selection import GridSearchCV
 import os
+from sklearn.metrics import roc_auc_score
+
+
 #specify the core number on windows
 os.environ["LOKY_MAX_CPU_COUNT"] = "10"
 
@@ -16,25 +19,25 @@ def apply_naive_bayes():
     print("score on test: " + str(mnb.score(x_test, y_test)))
     print("score on train: "+ str(mnb.score(x_train, y_train)))
 
-def apply_knn():
+def apply_knn(k):
     #test a range of k Values on the Test Set:
     score_list = []
 
-    for i in range(1, 36):
+    for i in range(1, k):
         knn = KNeighborsClassifier(n_neighbors=i)
         knn.fit(x_train, y_train)
         score_list.append(knn.score(x_test, y_test))
 
-    plt.plot(range(1,36),score_list,color='pink', linestyle='dashed', marker='o', markerfacecolor='grey',markersize=10)
+    plt.plot(range(1,k),score_list,color='pink', linestyle='dashed', marker='o', markerfacecolor='grey',markersize=10)
     plt.title("Accuracy vs. K Value")
     plt.xlabel("K")
     plt.ylabel("Accuracy")
-    plt.savefig("A/plot_images /knn_test.png")
+    plt.savefig("A/plot_images/knn_test.png")
 
-def apply_knn_gridsearch():
+def apply_knn_gridsearch(k):
 
     param_grid = {
-        'n_neighbors': np.arange(2,36),
+        'n_neighbors': np.arange(1,k),
         'weights': ['uniform', 'distance'],
         'metric': ['euclidean', 'manhattan']
     }
@@ -51,7 +54,11 @@ def apply_knn_gridsearch():
 
     # Retrieve the best estimator
     best_model = grid_search.best_estimator_
-
+    y_pred_probs = best_model.predict(x_test)
+    auc = roc_auc_score(y_test, y_pred_probs)
     # Evaluate on the test set
     test_accuracy = best_model.score(x_test, y_test)
     print("Test set accuracy:", test_accuracy)
+    print(f"Test AUC: {auc}")
+
+apply_knn_gridsearch(68)

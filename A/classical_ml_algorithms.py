@@ -10,7 +10,16 @@ from sklearn.metrics import roc_auc_score
 #specify the core number on windows
 os.environ["LOKY_MAX_CPU_COUNT"] = "10"
 
-x_train, y_train, x_val, y_val, x_test, y_test = load_and_preprocess_dataset()
+train_dataset, val_dataset, test_dataset = load_dataset_t1()
+x_train, y_train = convert_dataset_for_classical_ml(train_dataset)
+x_val, y_val = convert_dataset_for_classical_ml(val_dataset)
+x_test, y_test = convert_dataset_for_classical_ml(test_dataset)
+
+x_train = x_train.reshape(x_train.shape[0],-1)
+x_val = x_val.reshape(x_val.shape[0],-1)
+x_test = x_test.reshape(x_test.shape[0],-1)
+
+
 y_train = y_train.ravel()
 y_test = y_test.ravel()
 

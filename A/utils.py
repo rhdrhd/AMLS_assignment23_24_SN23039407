@@ -1,9 +1,35 @@
 import numpy as np
 import random
-import tensorflow as tf
-import sys
+import torch
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from skimage.transform import rotate
+from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms
+from torchvision.transforms.functional import to_tensor
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_auc_score, confusion_matrix
+import seaborn as sns
+
+class CustomDataset(Dataset):
+    def __init__(self, images, labels, transform=None, target_transform=None):
+        self.images = images
+        self.labels = labels
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        image = self.images[idx]
+        label = self.labels[idx]
+
+        if self.transform:
+            image = self.transform(image)
+
+        
+        label = torch.FloatTensor(label)
+
+        return image, label
 
 
 # Function to rotate an image
@@ -53,31 +79,82 @@ def normalize_data(data):
     normalized_data = scaler.fit_transform(data)
     return normalized_data
 
+def plot_confusion_matrix(y_true, y_pred, classes, name):
+    cm = confusion_matrix(y_true, y_pred)
+    plt.figure(figsize=(10,7))
+    sns.heatmap(cm, annot=True, xticklabels=classes, yticklabels=classes, cmap= "crest")
+    plt.xlabel('Predicted Label')
+    plt.ylabel('True Label')
+    plt.title('CM')
+    plt.savefig(f'A/images/confusion_matrix_{name}.png')
 
-def load_and_preprocess_dataset():
-    # setting parent path
-    sys.path.append('../AMLS_ASSIGNMENT23_24')
 
-    #load datasets
+def get_mean_std(loader):
+    # Vectors to store the sum and square sum of all elements in the dataset for each channel
+    channel_sum, channel_sq_sum, num_batches = 0, 0, 0
+
+    for data,_ in loader:
+ 
+        channel_sum += torch.mean(data, dim=[0, 2, 3])  # Mean over batch, height, and width
+        channel_sq_sum += torch.mean(data**2, dim=[0, 2, 3])  # Squared mean over batch, height, and width
+        num_batches += 1
+        mean = channel_sum / num_batches
+        std = (channel_sq_sum / num_batches - mean**2)**0.5  # Standard deviation
+
+    return mean, std
+
+
+def load_dataset_t1():
+    
     data = np.load('Datasets/pneumoniamnist.npz')
+    
+    train_dataset = CustomDataset(data['train_images'], data['train_labels'],transform=transforms.Compose([transforms.ToTensor()]))
+    val_dataset = CustomDataset(data['val_images'], data['val_labels'])
+    test_dataset = CustomDataset(data['test_images'], data['test_labels'])
 
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True,drop_last=True)
 
-    #extract train, validation and test from data
-    train_images = data['train_images']
-    train_labels = data['train_labels']
-    val_images = data['val_images']
-    val_labels = data['val_labels']
-    test_images = data['test_images']
-    test_labels = data['test_labels']
+    mean, std = get_mean_std(train_loader)
+    
+    #calculate mean and std from train
+    normalize_pad_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std)
 
-    dataset = [train_images, train_labels, val_images, val_labels, test_images, test_labels]
-    for i in range(len(dataset)):
-        dataset[i] = dataset[i].astype('float32').reshape(dataset[i].shape[0], -1)
-        dataset[i] = normalize_data(dataset[i])
+    ])  
+    
+  
+    normalize_train = CustomDataset(data['train_images'], data['train_labels'], transform=normalize_pad_transform)
+    normalize_val = CustomDataset(data['val_images'], data['val_labels'], transform= normalize_pad_transform)
+    normalize_test = CustomDataset(data['test_images'], data['test_labels'], transform= normalize_pad_transform)
 
-    return dataset[:]
+    return normalize_train, normalize_val, normalize_test
+
+def convert_dataset_for_classical_ml(dataset):
+    data_list = []
+    label_list = []
+
+    for data, label in dataset:
+
+        data_list.append(data.numpy())
+        label_list.append(label.numpy())
+
+    data_array = np.asarray(data_list)
+    label_array = np.asarray(label_list)
+
+    return data_array, label_array
+
 
 #x_train, y_train, x_val, y_val, x_test, y_test = load_and_preprocess_dataset()
 
+
+#train, val, test = load_dataset_t1()
+#for one in train:
+#    print(one[0].dtype)
+#    print(one[1].dtype)
+#    break
+#x_train, y_train = convert_dataset_for_classical_ml(train)
+#print(x_train.shape)
+#print(y_train.shape)
 
 

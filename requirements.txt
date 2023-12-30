@@ -1,6 +1,12 @@
-python = 3.11.5
+python == 3.11
 medmnist
 numpy
 matplotlib
 wandb
 torch
+scikit-learn
+monai
+pytorch
+torchvision
+torchaudio
+pytorch-cuda == 12.1

@@ -3,6 +3,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from utils import *
 import matplotlib.pyplot as plt
 from sklearn.model_selection import GridSearchCV
+from sklearn.svm import SVC
 import os
 from sklearn.metrics import roc_auc_score
 
@@ -28,20 +29,40 @@ def apply_naive_bayes():
     print("score on test: " + str(mnb.score(x_test, y_test)))
     print("score on train: "+ str(mnb.score(x_train, y_train)))
 
+def apply_svm(kernel='rbf'):
+    class_names = ["0","1"]
+    svm_model = SVC(kernel=kernel)
+    svm_model.fit(x_train, y_train)
+    predictions = svm_model.predict(x_test)
+    evaluate_performance_metrics(y_test, predictions, class_names,"svm")
+
 def apply_knn(k):
     #test a range of k Values on the Test Set:
     score_list = []
-
-    for i in range(1, k):
+    highest_score = 0
+    best_k = 0
+    for i in range(3, k, 2):
         knn = KNeighborsClassifier(n_neighbors=i)
         knn.fit(x_train, y_train)
+        knn_score = knn.score(x_test, y_test)
+        if knn_score > highest_score:
+            highest_score = knn_score
+            best_k = k
         score_list.append(knn.score(x_test, y_test))
 
-    plt.plot(range(1,k),score_list,color='pink', linestyle='dashed', marker='o', markerfacecolor='grey',markersize=10)
+    plt.plot(range(3,k,2),score_list,color='pink', linestyle='dashed', marker='o', markerfacecolor='grey',markersize=10)
     plt.title("Accuracy vs. K Value")
     plt.xlabel("K")
     plt.ylabel("Accuracy")
-    plt.savefig("A/plot_images/knn_test.png")
+    plt.savefig("A/images/knn_test.png")
+
+    class_names = ["0","1"]
+    knn = KNeighborsClassifier(n_neighbors=i)
+    knn.fit(x_train, y_train)
+    predictions = knn.predict(x_test)
+    evaluate_performance_metrics(y_test, predictions, class_names,"knn")
+
+
 
 def apply_knn_gridsearch(k):
 
@@ -70,4 +91,5 @@ def apply_knn_gridsearch(k):
     print("Test set accuracy:", test_accuracy)
     print(f"Test AUC: {auc}")
 
-apply_knn_gridsearch(68)
+apply_knn(20)
+apply_svm()

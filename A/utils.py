@@ -7,7 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from torchvision.transforms.functional import to_tensor
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_auc_score, confusion_matrix
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 import seaborn as sns
 
 class CustomDataset(Dataset):
@@ -79,14 +79,40 @@ def normalize_data(data):
     normalized_data = scaler.fit_transform(data)
     return normalized_data
 
-def plot_confusion_matrix(y_true, y_pred, classes, name):
-    cm = confusion_matrix(y_true, y_pred)
-    plt.figure(figsize=(10,7))
-    sns.heatmap(cm, annot=True, xticklabels=classes, yticklabels=classes, cmap= "crest")
-    plt.xlabel('Predicted Label')
-    plt.ylabel('True Label')
-    plt.title('CM')
-    plt.savefig(f'A/images/confusion_matrix_{name}.png')
+def evaluate_performance_metrics(true_labels, predictions, class_names, model_name):
+
+    # Convert lists to numpy arrays 
+    if not isinstance(true_labels, np.ndarray):
+        true_labels = np.array(true_labels)
+    if not isinstance(predictions, np.ndarray):
+        predictions = np.array(predictions)
+
+    # Calculating metrics
+    accuracy = accuracy_score(true_labels, predictions)
+    precision = precision_score(true_labels, predictions)
+    recall = recall_score(true_labels, predictions)
+    f1 = f1_score(true_labels, predictions)
+    auc = roc_auc_score(true_labels, predictions)
+
+    # Confusion matrix
+    cm = confusion_matrix(true_labels, predictions)
+
+    # Plotting the confusion matrix
+    plt.figure(figsize=(10, 7))
+    sns.heatmap(cm, annot=True, fmt='g', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.title('Confusion Matrix')
+    plt.savefig(f'TaskA_Confusion_Matrix_{model_name}.png')
+
+    # Print metrics
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"AUC: {auc:.4f}")
+    print(f"Recall: {recall:.4f}")
+    print(f"Precision: {precision:.4f}")
+    #print(f"F1 Score: {f1:.4f}")
+    
+
 
 
 def get_mean_std(loader):

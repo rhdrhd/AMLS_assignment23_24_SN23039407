@@ -44,7 +44,7 @@ def train_densenet121(num_epochs, lr):
             optimizer.zero_grad()
             data = data.cuda()
             output = model(data)
-            target = target.reshape(-1).long().cuda()
+            target = target.reshape(-1).cuda()
             loss = criterion(output, target)
             loss.backward()
             optimizer.step()
@@ -58,7 +58,7 @@ def train_densenet121(num_epochs, lr):
             for data, target in val_loader:
                 data = data.cuda()
                 val_output = model(data)
-                target = target.reshape(-1).long().cuda()
+                target = target.reshape(-1).cuda()
                 val_loss = criterion(val_output, target)
                 _, pred_label = torch.max(val_output, 1)
                 num_correct += (pred_label == target).sum().item()

@@ -70,25 +70,18 @@ class CustomDataset(Dataset):
         image = self.images[idx]
         label = self.labels[idx]
 
-        # Convert to tensor
-        image = to_tensor(image)
-
         if self.transform:
             image = self.transform(image)
 
+        label = torch.LongTensor(label)
         return image, label
 
 
 
 def load_dataset_new(dataset):
     # Create datasets
-        
-    if dataset == "task1":
-        data = np.load('Datasets/pneumoniamnist.npz')
-    elif dataset == "task2":
-        data = np.load('Datasets/pathmnist.npz')
-    else:
-        print('Please add dataset in Datasets folder')
+
+    data = np.load('Datasets/pathmnist.npz')
 
     train_dataset = CustomDataset(data['train_images'], data['train_labels'])
     val_dataset = CustomDataset(data['val_images'], data['val_labels'])
@@ -102,9 +95,8 @@ def get_mean_std(loader):
     # Vectors to store the sum and square sum of all elements in the dataset for each channel
     channel_sum, channel_sq_sum, num_batches = 0, 0, 0
 
-    for batch in loader:
-        #print(len(batch))
-        data = batch[0]
+    for data,_ in loader:
+
         channel_sum += torch.mean(data, dim=[0, 2, 3])  # Mean over batch, height, and width
         channel_sq_sum += torch.mean(data**2, dim=[0, 2, 3])  # Squared mean over batch, height, and width
         num_batches += 1
@@ -117,7 +109,7 @@ def load_dataset_t2():
     
     data = np.load('Datasets/pathmnist.npz')
     
-    train_dataset = CustomDataset(data['train_images'], data['train_labels'])
+    train_dataset = CustomDataset(data['train_images'], data['train_labels'],transform=transforms.Compose([transforms.ToTensor()]))
     val_dataset = CustomDataset(data['val_images'], data['val_labels'])
     test_dataset = CustomDataset(data['test_images'], data['test_labels'])
 
@@ -126,8 +118,9 @@ def load_dataset_t2():
     
     #calculate mean and std from train
     normalize_pad_transform = transforms.Compose([
-        transforms.Normalize(mean, std),
-        transforms.Pad((1, 1, 0, 0))
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std)
+        #transforms.Pad((1, 1, 0, 0))
     ])  
     
     normalize_train = CustomDataset(data['train_images'], data['train_labels'], transform=normalize_pad_transform)
@@ -136,39 +129,17 @@ def load_dataset_t2():
 
     return normalize_train, normalize_val, normalize_test
 
-#dead one
-def load_and_preprocess_dataset(dataset):
-    
-    if dataset == "task1":
-        data = np.load('Datasets/pneumoniamnist.npz')
-    elif dataset == "task2":
-        data = np.load('Datasets/pathmnist.npz')
-    else:
-        print('Please add dataset in Datasets folder')
-
-    #extract train, validation and test from data
-    train_images = data['train_images']
-    train_labels = data['train_labels']
-    val_images = data['val_images']
-    val_labels = data['val_labels']
-    test_images = data['test_images']
-    test_labels = data['test_labels']
-
-    dataset = [train_images, train_labels, val_images, val_labels, test_images, test_labels]
-    for i in range(len(dataset)):
-        dataset[i] = dataset[i].astype('float32').reshape(dataset[i].shape[0], -1)
-        dataset[i] = normalize_data(dataset[i])
-
-    return dataset[:]
 
 #x_train, y_train, x_val, y_val, x_test, y_test = load_and_preprocess_dataset()
 #train, val, test = load_dataset_t2()
-#train_loader = DataLoader(train, batch_size=32, shuffle=True,drop_last=True)
+#rain_loader = DataLoader(train, batch_size=32, shuffle=True,drop_last=True)
 
 #for item in train_loader:
 #    print(item[0].shape)
 #    print(item[1])
 #    break
-    
 
+#x_train, y_train = convert_dataset_for_classical_ml(train)
+#print(x_train.shape)
+#print(y_train.shape)
 

@@ -1,6 +1,6 @@
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.neighbors import KNeighborsClassifier
-from utils import *
+from A.utils import *
 import matplotlib.pyplot as plt
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC

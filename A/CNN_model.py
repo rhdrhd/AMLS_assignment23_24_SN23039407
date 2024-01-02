@@ -9,8 +9,8 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-import A.utils as utils
-from torchsummary import summary
+from . import utils
+
 
 #fix random seeds to increase reproducibility
 random.seed(23)
@@ -96,7 +96,7 @@ def train_customCNN(num_epochs, lr):
             optimizer.zero_grad()
             data = data.cuda()
             output = model(data)
-            target = target.float().cuda()
+            target = target.cuda()
             loss = criterion(output, target)
             loss.backward()
             optimizer.step()
@@ -199,6 +199,6 @@ def test_customCNN():
         #print(f"roc auc score: {roc_auc}")
 
 #train_customCNN(100,0.0001)
-#test_customCNN()
+test_customCNN()
 
 

@@ -3,10 +3,12 @@ import random
 import sys
 import torch
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 from skimage.transform import rotate
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
-from torchvision.transforms.functional import to_tensor
+import matplotlib.pyplot as plt
+import seaborn as sns
 import os
 
 
@@ -76,18 +78,37 @@ class CustomDataset(Dataset):
         label = torch.LongTensor(label)
         return image, label
 
+def evaluate_performance_metrics(true_labels, predictions, probabilities, class_names, model_name):
 
+    # Convert lists to numpy arrays 
+    if not isinstance(true_labels, np.ndarray):
+        true_labels = np.array(true_labels)
+    if not isinstance(predictions, np.ndarray):
+        predictions = np.array(predictions)
 
-def load_dataset_new(dataset):
-    # Create datasets
+    # Calculating metrics
+    accuracy = accuracy_score(true_labels, predictions)
+    precision = precision_score(true_labels, predictions, average='weighted')
+    recall = recall_score(true_labels, predictions, average='weighted')
+    f1 = f1_score(true_labels, predictions, average='weighted')
+    #auc = roc_auc_score(true_labels, probabilities, multi_class='ovr', average='weighted')
 
-    data = np.load('Datasets/pathmnist.npz')
+    # Confusion matrix
+    cm = confusion_matrix(true_labels, predictions)
 
-    train_dataset = CustomDataset(data['train_images'], data['train_labels'])
-    val_dataset = CustomDataset(data['val_images'], data['val_labels'])
-    test_dataset = CustomDataset(data['test_images'], data['test_labels'])
+    # Plotting the confusion matrix
+    plt.figure(figsize=(10, 7))
+    sns.heatmap(cm, annot=True, fmt='g', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.title('Confusion Matrix')
+    plt.savefig(f'B/images/TaskB_Confusion_Matrix_{model_name}.png')
 
-    return train_dataset, val_dataset, test_dataset
+    # Print metrics
+    print(f"Accuracy: {accuracy:.4f}")
+    #print(f"AUC: {auc:.4f}")
+    print(f"Recall: {recall:.4f}")
+    print(f"Precision: {precision:.4f}")
 
 
 
@@ -105,7 +126,7 @@ def get_mean_std(loader):
 
     return mean, std
 
-def load_dataset_t2():
+def load_dataset_t2(model_name):
     
     data = np.load('Datasets/pathmnist.npz')
     
@@ -116,23 +137,30 @@ def load_dataset_t2():
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True,drop_last=True)
     mean, std = get_mean_std(train_loader)
     
+
+
     #calculate mean and std from train
-    normalize_pad_transform = transforms.Compose([
+    transform_list = [
         transforms.ToTensor(),
-        transforms.Normalize(mean, std)
-        #transforms.Pad((1, 1, 0, 0))
-    ])  
+        transforms.Normalize(mean, std)  # Replace 'mean' and 'std' with your values
+    ]
+    if model_name == "DenseNet121":
+        transform_list.append(transforms.Pad((1, 1, 0, 0)))
+    elif model_name == "ResNet18":
+        transform_list.append(transforms.Resize((32,32)))
     
-    normalize_train = CustomDataset(data['train_images'], data['train_labels'], transform=normalize_pad_transform)
-    normalize_val = CustomDataset(data['val_images'], data['val_labels'], transform= normalize_pad_transform)
-    normalize_test = CustomDataset(data['test_images'], data['test_labels'], transform= normalize_pad_transform)
+    normalize_transform = transforms.Compose(transform_list)
+    
+    normalize_train = CustomDataset(data['train_images'], data['train_labels'], transform=normalize_transform)
+    normalize_val = CustomDataset(data['val_images'], data['val_labels'], transform= normalize_transform)
+    normalize_test = CustomDataset(data['test_images'], data['test_labels'], transform= normalize_transform)
 
     return normalize_train, normalize_val, normalize_test
 
 
 #x_train, y_train, x_val, y_val, x_test, y_test = load_and_preprocess_dataset()
-#train, val, test = load_dataset_t2()
-#rain_loader = DataLoader(train, batch_size=32, shuffle=True,drop_last=True)
+#train, val, test = load_dataset_t2("ResNet18")
+#train_loader = DataLoader(train, batch_size=32, shuffle=True,drop_last=True)
 
 #for item in train_loader:
 #    print(item[0].shape)

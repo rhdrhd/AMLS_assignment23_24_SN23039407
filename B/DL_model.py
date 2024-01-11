@@ -52,6 +52,7 @@ def train_model(model_name, num_epochs, lr):
     val_loss_list = []
     best_epoch = 0
     early_stop_thresh = 10
+    
     for epoch in range(num_epochs):
         total_val_loss_epoch = 0
         total_train_loss_epoch = 0
@@ -163,5 +164,5 @@ def test_model(model_name):
         print(f"Test Accuracy: {num_correct / num_samples:.2f}")
         #print(f"roc auc score: {roc_auc}")
 
-train_model("ResNet18",50,0.001)
+#train_model("DenseNet121",50,0.0001)
 test_model("ResNet18")

@@ -3,7 +3,7 @@ import random
 import sys
 import torch
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix, classification_report
 from skimage.transform import rotate
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
@@ -89,9 +89,11 @@ def evaluate_performance_metrics(true_labels, predictions, probabilities, class_
     # Calculating metrics
     accuracy = accuracy_score(true_labels, predictions)
     precision = precision_score(true_labels, predictions, average='weighted')
-    recall = recall_score(true_labels, predictions, average='weighted')
+    recall = recall_score(true_labels, predictions, average='weighted') #sensitivity
     f1 = f1_score(true_labels, predictions, average='weighted')
-    #auc = roc_auc_score(true_labels, probabilities, multi_class='ovr', average='weighted')
+    auc = roc_auc_score(true_labels, probabilities, multi_class='ovr', average='weighted')
+    
+    report = classification_report(true_labels, predictions,class_names)
 
     # Confusion matrix
     cm = confusion_matrix(true_labels, predictions)
@@ -109,6 +111,7 @@ def evaluate_performance_metrics(true_labels, predictions, probabilities, class_
     #print(f"AUC: {auc:.4f}")
     print(f"Recall: {recall:.4f}")
     print(f"Precision: {precision:.4f}")
+    print(report)
 
 
 
@@ -146,7 +149,7 @@ def load_dataset_t2(model_name):
     ]
     if model_name == "DenseNet121":
         transform_list.append(transforms.Pad((1, 1, 0, 0)))
-    elif model_name == "ResNet18":
+    if model_name == "ResNet18":
         transform_list.append(transforms.Resize((32,32)))
     
     normalize_transform = transforms.Compose(transform_list)

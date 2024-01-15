@@ -31,9 +31,7 @@ def select_model(model_name):
         dropout_rate = 0.5 
         model.fc = nn.Sequential(
             nn.Dropout(dropout_rate),
-            nn.Linear(model.fc.in_features, 100),
-            nn.Dropout(dropout_rate),
-            nn.Linear(100,num_classes)
+            nn.Linear(model.fc.in_features,num_classes)
         )
 
 
@@ -47,18 +45,14 @@ def select_model(model_name):
         dropout_rate = 0.5 
         model.fc = nn.Sequential(
             nn.Dropout(dropout_rate),
-            nn.Linear(model.fc.in_features, 100),
-            nn.Dropout(dropout_rate),
-            nn.Linear(100,num_classes)
+            nn.Linear(model.fc.in_features, num_classes)
         )
-
-    
     else:
         print("This model is not yet supported")
     return model 
 
 
-def train_model(model_name, num_epochs, lr):
+def train_model(model_name, num_epochs, lr, optimizer="Adam"):
 
     #select gpu as priority
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -75,7 +69,14 @@ def train_model(model_name, num_epochs, lr):
 
     # Loss function and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    if optimizer == "Adam":
+        optimizer = optim.Adam(model.parameters(), lr=lr)
+    elif optimizer == "AdamW":
+        optimizer = optim.AdamW(model.parameters(), lr=lr)
+    elif optimizer == "SGD":
+        optimizer == optim.SGD(model.parameters(), lr=lr)
+    else:
+        print("Please manually add this optimizer")
 
     #set placeholder for best model
     lowest_val_loss = float('inf')

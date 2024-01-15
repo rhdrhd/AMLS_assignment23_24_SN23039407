@@ -137,9 +137,9 @@ def load_dataset_t2(model_name="ResNet50_28_dropout", augmented=True):
     if model_name == "DenseNet121":
         basic_transform_list.append(transforms.Pad((1, 1, 0, 0)))
     if model_name in ("ResNet18_32","ResNet18_32_dropout","ResNet50_32","ResNet50_32_dropout"):
-        basic_transform_list.append(transforms.Resize((32,32)))
-    if model_name in ("ResNet18_224"):
-        basic_transform_list.append(transforms.Resize((224,224)))
+        basic_transform_list.append(transforms.Resize((32,32),antialias=True))
+    if model_name in ("ResNet18_224", "ResNet18_32_dropout","ResNet50_224"):
+        basic_transform_list.append(transforms.Resize((224,224),antialias=True))
 
     transform_for_test = transforms.Compose(basic_transform_list)
 

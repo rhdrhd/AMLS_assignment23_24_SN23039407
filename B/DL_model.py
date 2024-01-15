@@ -1,36 +1,73 @@
 from . import utils
+import random
+import numpy as np
 from monai.networks.nets import DenseNet121
-from torchvision.models import resnet18
+from torchvision.models import resnet18, resnet50, alexnet
+from sklearn.metrics import roc_auc_score
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import wandb
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
+from torchsummary import summary
 
-#load wandb
-#wandb.login()
-#wandb.init(project="aml-final-dense")
+#fix seed for reproductivity
+random.seed(23)
+np.random.seed(23)
 
-#select gpu training as priority
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print("The device used for training is", device)
+
 
 def select_model(model_name):
+    num_classes =9
     if model_name == "DenseNet121":
         model = DenseNet121(spatial_dims=2, in_channels=3, out_channels=9)
-    elif model_name == "ResNet18":
-        model = resnet18()
+    elif model_name in ("ResNet18_28", "ResNet18_32"):
+        model = resnet18(weights= True)
+        model.fc = nn.Linear(model.fc.in_features, num_classes)
+
+
+    elif model_name in ("ResNet18_28_dropout","ResNet18_32_dropout"):
+        model = resnet18(weights= True)
+        dropout_rate = 0.5 
+        model.fc = nn.Sequential(
+            nn.Dropout(dropout_rate),
+            nn.Linear(model.fc.in_features, 100),
+            nn.Dropout(dropout_rate),
+            nn.Linear(100,num_classes)
+        )
+
+
+    elif model_name in ("ResNet50_28", "ResNet50_32"):
+        model = resnet50(weights= True)
+        model.fc = nn.Linear(model.fc.in_features, num_classes)
+
+
+    elif model_name in ("ResNet50_28_dropout", "ResNet50_32_dropout"):
+        model = resnet50(weights= True)
+        dropout_rate = 0.5 
+        model.fc = nn.Sequential(
+            nn.Dropout(dropout_rate),
+            nn.Linear(model.fc.in_features, 100),
+            nn.Dropout(dropout_rate),
+            nn.Linear(100,num_classes)
+        )
+
+    
     else:
         print("This model is not yet supported")
     return model 
 
 
 def train_model(model_name, num_epochs, lr):
+
+    #select gpu as priority
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print("The device used for training is", device)
+
     #initialize the model
     model = select_model(model_name)
     
-    train_dataset, val_dataset, test_dataset = utils.load_dataset_t2(model_name)
+    train_dataset, val_dataset, _ = utils.load_dataset_t2(model_name, augmented=True)
 
     # Create DataLoaders
     train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True,drop_last=True)
@@ -43,15 +80,17 @@ def train_model(model_name, num_epochs, lr):
     #set placeholder for best model
     lowest_val_loss = float('inf')
     highest_val_accuracy = 0
+    highest_auc = 0
     best_model_val_loss = None  
     best_model_val_acc = None
+    best_model_val_auc =None
 
     model.to(device)
     # Training loop
     train_loss_list = []
     val_loss_list = []
     best_epoch = 0
-    early_stop_thresh = 10
+    early_stop_thresh = 5
     
     for epoch in range(num_epochs):
         total_val_loss_epoch = 0
@@ -70,9 +109,11 @@ def train_model(model_name, num_epochs, lr):
         
         train_loss_epoch_avg=  total_train_loss_epoch/len(train_loader)
         train_loss_list.append(train_loss_epoch_avg.detach().cpu())
-        print(f"Epoch {epoch+1}/{num_epochs}, Loss: {loss.item()}")
+        print(f"Epoch {epoch+1}/{num_epochs}, train_loss: {train_loss_epoch_avg}")
 
         model.eval()
+        true_labels = []
+        probabilities = []
         with torch.no_grad():
             num_correct = 0
             num_samples = 0
@@ -80,9 +121,12 @@ def train_model(model_name, num_epochs, lr):
                 data = data.cuda()
                 val_output = model(data)
                 target = target.reshape(-1).cuda()
+                true_labels.extend(target.cpu().numpy())
                 val_loss = criterion(val_output, target)
                 total_val_loss_epoch+= val_loss
                 _, pred_label = torch.max(val_output, 1)
+                prob = torch.nn.functional.softmax(val_output, dim=1)
+                probabilities.extend(prob.cpu().numpy())
                 num_correct += (pred_label == target).sum().item()
                 num_samples += pred_label.size(0)
             
@@ -90,23 +134,34 @@ def train_model(model_name, num_epochs, lr):
             val_accuracy = 100*num_correct / num_samples
 
             val_loss_list.append(val_loss_epoch_avg.cpu())
-            print(f"val_loss:{val_loss}")
+            auc = roc_auc_score(true_labels, probabilities,  multi_class='ovr', average='weighted')
+            print(f"auc:{auc}")
+            print(f"val_loss:{val_loss_epoch_avg.cpu()}")
             print(f"Validation Accuracy: {val_accuracy:.2f}")
 
+        #if val_accuracy > highest_val_accuracy:
+        #    highest_val_accuracy = val_accuracy
+        #    best_model_val_acc = model.state_dict()
+            
+
         if val_loss_epoch_avg < lowest_val_loss:
-            best_epoch = epoch
+            #best_epoch = epoch
             lowest_val_loss = val_loss_epoch_avg
             best_model_val_loss = model.state_dict()
-            torch.save(best_model_val_loss, f'B/pretrained_weights/best_model_val_loss_{model_name}.pth')
+            torch.save(best_model_val_loss, f'B/pretrained_weights/best_model_val_loss_{model_name}.pth')#    torch.save(best_model_val_acc, f'B/pretrained_weights/best_model_val_acc_{model_name}.pth')
+        
+        if auc > highest_auc:
+            best_epoch = epoch
+            highest_auc = auc
+            best_model_val_auc = model.state_dict()
+            torch.save(best_model_val_auc, f'B/pretrained_weights/best_model_val_auc_{model_name}.pth')
+
         elif epoch - best_epoch > early_stop_thresh:
             print(f"Early stopped training at epoch {epoch}" )
             print(f"Best Epoch is {best_epoch}")
             break  # terminate the training loop
 
-        #if val_accuracy > highest_val_accuracy:
-        #    highest_val_accuracy = val_accuracy
-        #    best_model_val_acc = model.state_dict()
-        #    torch.save(best_model_val_acc, 'B/pretrained_weights_denseNet/best_model_val_acc.pth')
+
 
     plt.figure(figsize=(10, 6))
     names = ["val_loss","train_loss"]
@@ -117,15 +172,14 @@ def train_model(model_name, num_epochs, lr):
     plt.ylabel('Loss')
     plt.legend(names, loc='upper right')
     plt.grid(True)
-    plt.savefig(f"loss_image_{model_name}.png")        
+    plt.savefig(f"B/images/loss_image_{model_name}.png")        
 
-        #log performance on wandb platform
-        #wandb.log({"epoch":epoch+1})
-        #wandb.log({"train_loss":loss})
-        #wandb.log({"val_accuracy": val_accuracy})
-        #wandb.log({"val_loss":val_loss})
 
 def test_model(model_name):
+    #select gpu as priority
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print("The device used for training is", device)
+
     #initialize the model
     model = select_model(model_name)
 
@@ -147,22 +201,20 @@ def test_model(model_name):
         for data, target in test_loader:
             data = data.cuda()
             test_output = model(data)
+
             target = target.reshape(-1).long().cuda()
             test_loss = criterion(test_output, target)
             _, pred_label = torch.max(test_output, 1)
             predictions.extend(pred_label.cpu().numpy())
             true_labels.extend(target.cpu().numpy())
-            probabilities.extend(test_output.cpu().numpy())
+
+            prob = torch.nn.functional.softmax(test_output, dim=1)
+            probabilities.extend(prob.cpu().numpy())
             num_correct += (pred_label == target).sum().item()
             num_samples += pred_label.size(0)
-
         
-        classes = ["1","2","3","4","5","6","7","8","9"]
-        #roc_auc = roc_auc_score(true_labels, predictions)
+        classes = ["0","1","2","3","4","5","6","7","8"]
         utils.evaluate_performance_metrics(true_labels, predictions,probabilities, classes, model_name)
-        print(f"test_loss:{test_loss}")
-        print(f"Test Accuracy: {num_correct / num_samples:.2f}")
-        #print(f"roc auc score: {roc_auc}")
+        accuracy = num_correct/num_samples
+        print(accuracy)
 
-#train_model("DenseNet121",50,0.0001)
-test_model("ResNet18")

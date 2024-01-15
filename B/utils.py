@@ -87,13 +87,8 @@ def evaluate_performance_metrics(true_labels, predictions, probabilities, class_
         predictions = np.array(predictions)
 
     # Calculating metrics
-    accuracy = accuracy_score(true_labels, predictions)
-    precision = precision_score(true_labels, predictions, average='weighted')
-    recall = recall_score(true_labels, predictions, average='weighted') #sensitivity
-    f1 = f1_score(true_labels, predictions, average='weighted')
-    auc = roc_auc_score(true_labels, probabilities, multi_class='ovr', average='weighted')
-    
-    report = classification_report(true_labels, predictions,class_names)
+    auc = roc_auc_score(true_labels, probabilities,  multi_class='ovr', average='weighted')
+    report = classification_report(true_labels, predictions, target_names=class_names, digits=6)
 
     # Confusion matrix
     cm = confusion_matrix(true_labels, predictions)
@@ -104,14 +99,10 @@ def evaluate_performance_metrics(true_labels, predictions, probabilities, class_
     plt.xlabel('Predicted')
     plt.ylabel('True')
     plt.title('Confusion Matrix')
-    plt.savefig(f'B/images/TaskB_Confusion_Matrix_{model_name}.png')
+    plt.savefig(f'B/images/confusion_matrix_{model_name}.png')
 
-    # Print metrics
-    print(f"Accuracy: {accuracy:.4f}")
-    #print(f"AUC: {auc:.4f}")
-    print(f"Recall: {recall:.4f}")
-    print(f"Precision: {precision:.4f}")
     print(report)
+    print(f"AUC: {auc:.4f}")
 
 
 
@@ -129,34 +120,41 @@ def get_mean_std(loader):
 
     return mean, std
 
-def load_dataset_t2(model_name):
+def load_dataset_t2(model_name="ResNet50_28_dropout", augmented=True):
     
+    #load dataset from Datasets folder
     data = np.load('Datasets/pathmnist.npz')
     
+    #calculate mean and std from train
     train_dataset = CustomDataset(data['train_images'], data['train_labels'],transform=transforms.Compose([transforms.ToTensor()]))
-    val_dataset = CustomDataset(data['val_images'], data['val_labels'])
-    test_dataset = CustomDataset(data['test_images'], data['test_labels'])
-
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True,drop_last=True)
     mean, std = get_mean_std(train_loader)
-    
-
-
-    #calculate mean and std from train
-    transform_list = [
+    basic_transform_list = [
         transforms.ToTensor(),
         transforms.Normalize(mean, std)  # Replace 'mean' and 'std' with your values
     ]
+    
     if model_name == "DenseNet121":
-        transform_list.append(transforms.Pad((1, 1, 0, 0)))
-    if model_name == "ResNet18":
-        transform_list.append(transforms.Resize((32,32)))
-    
-    normalize_transform = transforms.Compose(transform_list)
-    
-    normalize_train = CustomDataset(data['train_images'], data['train_labels'], transform=normalize_transform)
-    normalize_val = CustomDataset(data['val_images'], data['val_labels'], transform= normalize_transform)
-    normalize_test = CustomDataset(data['test_images'], data['test_labels'], transform= normalize_transform)
+        basic_transform_list.append(transforms.Pad((1, 1, 0, 0)))
+    if model_name in ("ResNet18_32","ResNet18_32_dropout","ResNet50_32","ResNet50_32_dropout"):
+        basic_transform_list.append(transforms.Resize((32,32)))
+    if model_name in ("ResNet18_224"):
+        basic_transform_list.append(transforms.Resize((224,224)))
+
+    transform_for_test = transforms.Compose(basic_transform_list)
+
+    #apply extra transformation for different model selected
+    aug_transform_list = basic_transform_list.copy()
+    if augmented:
+        aug_transform_list.append(transforms.RandomHorizontalFlip())
+        aug_transform_list.append(transforms.RandomRotation(10))
+
+    transform_for_train = transforms.Compose(aug_transform_list)
+
+    #apply augment and normalize transform to train, val and only normalize to test
+    normalize_train = CustomDataset(data['train_images'], data['train_labels'], transform=transform_for_train)
+    normalize_val = CustomDataset(data['val_images'], data['val_labels'], transform= transform_for_train)
+    normalize_test = CustomDataset(data['test_images'], data['test_labels'], transform= transform_for_test)
 
     return normalize_train, normalize_val, normalize_test
 
@@ -166,7 +164,7 @@ def load_dataset_t2(model_name):
 #train_loader = DataLoader(train, batch_size=32, shuffle=True,drop_last=True)
 
 #for item in train_loader:
-#    print(item[0].shape)
+#    print(item[0].max())
 #    print(item[1])
 #    break
 

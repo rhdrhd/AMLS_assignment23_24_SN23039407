@@ -16,9 +16,7 @@ from . import utils
 random.seed(23)
 np.random.seed(23)
 
-#select gpu training as priority
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print("The device used for training is", device)
+
 
 
 class CustomCNN(nn.Module):
@@ -54,13 +52,20 @@ class CustomCNN(nn.Module):
 
         return x
 
+def select_model(model_name):
+    if model_name == "CustomCNN":
+        model = CustomCNN()
+    else:
+        print("This model is not yet supported")
+    return model 
 
+def train_model(model_name, num_epochs, lr):
 
-def train_customCNN(num_epochs, lr):
-    #load wandb
-    #wandb.login()
-    #wandb.init(project="aml-final-cnn_binary")
-    model = CustomCNN()
+    #select gpu as priority
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print("The device used for training is", device)
+
+    model = select_model(model_name)
     # Create DataLoaders
     train_dataset, val_dataset, test_dataset = utils.load_dataset_t1()
 
@@ -132,7 +137,7 @@ def train_customCNN(num_epochs, lr):
             best_epoch = epoch
             lowest_val_loss = val_loss_epoch_avg
             best_model_val_loss = model.state_dict()
-            torch.save(best_model_val_loss, 'A/pretrained_weights_customCNN/best_model_val_loss_test_final.pth')
+            torch.save(best_model_val_loss, f'A/pretrained_weights_customCNN/best_model_val_loss_{model_name}.pth')
         elif epoch - best_epoch > early_stop_thresh:
             print(f"Early stopped training at epoch {epoch}" )
             print(f"Best Epoch is {best_epoch}")
@@ -148,7 +153,7 @@ def train_customCNN(num_epochs, lr):
     plt.ylabel('Loss')
     plt.legend(names, loc='upper right')
     plt.grid(True)
-    plt.savefig("loss image.png")
+    plt.savefig(f"performance_logging_image_{model_name}.png")
         #if val_accuracy > highest_val_accuracy:
         #    best_epoch = epoch
         #    highest_val_accuracy = val_accuracy
@@ -162,13 +167,17 @@ def train_customCNN(num_epochs, lr):
         #wandb.log({"val_accuracy": val_accuracy})
         #wandb.log({"val_loss":val_loss})
 
-def test_customCNN():
-    model = CustomCNN()
+def test_model(model_name="CustomCNN"):
+    #select gpu as priority
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print("The device used for training is", device)
+    
+    model = select_model(model_name)
     # Create DataLoaders
     train_dataset, val_dataset, test_dataset = utils.load_dataset_t1()
 
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle= True, drop_last=True)
-    model.load_state_dict(torch.load("A/pretrained_weights_customCNN/best_model_val_loss_test_final.pth"))
+    model.load_state_dict(torch.load(f"A/pretrained_weights_customCNN/best_model_val_loss_{model_name}.pth"))
     model.to(device)
     model.eval()
 
@@ -198,7 +207,7 @@ def test_customCNN():
         print(f"Test Accuracy: {num_correct / num_samples:.2f}")
         #print(f"roc auc score: {roc_auc}")
 
-#train_customCNN(100,0.0001)
-test_customCNN()
+
+
 
 

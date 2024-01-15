@@ -90,6 +90,3 @@ def apply_knn_gridsearch(k):
     test_accuracy = best_model.score(x_test, y_test)
     print("Test set accuracy:", test_accuracy)
     print(f"Test AUC: {auc}")
-
-apply_knn(20)
-apply_svm()

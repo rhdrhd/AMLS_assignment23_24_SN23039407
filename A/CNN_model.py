@@ -153,7 +153,7 @@ def train_model(model_name, num_epochs, lr):
     plt.ylabel('Loss')
     plt.legend(names, loc='upper right')
     plt.grid(True)
-    plt.savefig(f"performance_logging_image_{model_name}.png")
+    plt.savefig(f"A/images/performance_logging_image_{model_name}.png")
         #if val_accuracy > highest_val_accuracy:
         #    best_epoch = epoch
         #    highest_val_accuracy = val_accuracy
@@ -203,8 +203,8 @@ def test_model(model_name="CustomCNN"):
         
         classes = ["0","1"]
         utils.evaluate_performance_metrics(true_labels, predictions, classes,"CNN_test")
-        print(f"test_loss:{test_loss}")
-        print(f"Test Accuracy: {num_correct / num_samples:.2f}")
+        #print(f"test_loss:{test_loss}")
+        #print(f"Test Accuracy: {num_correct / num_samples:.2f}")
         #print(f"roc auc score: {roc_auc}")
 
 

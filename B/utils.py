@@ -159,16 +159,3 @@ def load_dataset_t2(model_name="ResNet50_28_dropout", augmented=True):
     return normalize_train, normalize_val, normalize_test
 
 
-#x_train, y_train, x_val, y_val, x_test, y_test = load_and_preprocess_dataset()
-#train, val, test = load_dataset_t2("ResNet18")
-#train_loader = DataLoader(train, batch_size=32, shuffle=True,drop_last=True)
-
-#for item in train_loader:
-#    print(item[0].max())
-#    print(item[1])
-#    break
-
-#x_train, y_train = convert_dataset_for_classical_ml(train)
-#print(x_train.shape)
-#print(y_train.shape)
-

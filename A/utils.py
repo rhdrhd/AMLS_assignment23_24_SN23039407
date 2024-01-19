@@ -103,13 +103,13 @@ def evaluate_performance_metrics(true_labels, predictions, class_names, model_na
     plt.xlabel('Predicted')
     plt.ylabel('True')
     plt.title('Confusion Matrix')
-    plt.savefig(f'TaskA_Confusion_Matrix_{model_name}.png')
+    plt.savefig(f'A/images/TaskA_Confusion_Matrix_{model_name}.png')
 
     # Print metrics
-    print(f"Accuracy: {accuracy:.4f}")
-    print(f"AUC: {auc:.4f}")
-    print(f"Recall: {recall:.4f}")
-    print(f"Precision: {precision:.4f}")
+    print(f"{model_name} Accuracy: {accuracy:.4f}")
+    print(f"{model_name} AUC: {auc:.4f}")
+    print(f"{model_name} Recall: {recall:.4f}")
+    print(f"{model_name} Precision: {precision:.4f}")
     #print(f"F1 Score: {f1:.4f}")
     
 
@@ -170,17 +170,5 @@ def convert_dataset_for_classical_ml(dataset):
 
     return data_array, label_array
 
-
-#x_train, y_train, x_val, y_val, x_test, y_test = load_and_preprocess_dataset()
-
-
-#train, val, test = load_dataset_t1()
-#for one in train:
-#    print(one[0].dtype)
-#    print(one[1].dtype)
-#    break
-#x_train, y_train = convert_dataset_for_classical_ml(train)
-#print(x_train.shape)
-#print(y_train.shape)
 
 

@@ -1,4 +1,8 @@
-python == 3.11
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch
+torchvision
+torchaudio
+
 medmnist
 numpy
 matplotlib
@@ -6,7 +10,7 @@ wandb
 torch
 scikit-learn
 monai
-pytorch
-torchvision
-torchaudio
-pytorch-cuda == 12.1
+seaborn 
+torchsummary
+
+

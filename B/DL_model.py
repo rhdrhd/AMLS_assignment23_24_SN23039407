@@ -24,8 +24,6 @@ def select_model(model_name):
     elif model_name in ("ResNet18_28", "ResNet18_32","ResNet18_224"):
         model = resnet18(weights= True)
         model.fc = nn.Linear(model.fc.in_features, num_classes)
-
-
     elif model_name in ("ResNet18_28_dropout","ResNet18_32_dropout","ResNet18_224_dropout"):
         model = resnet18(weights= True)
         dropout_rate = 0.5 
@@ -33,13 +31,9 @@ def select_model(model_name):
             nn.Dropout(dropout_rate),
             nn.Linear(model.fc.in_features,num_classes)
         )
-
-
     elif model_name in ("ResNet50_28", "ResNet50_32","ResNet50_224"):
         model = resnet50(weights= True)
         model.fc = nn.Linear(model.fc.in_features, num_classes)
-
-
     elif model_name in ("ResNet50_28_dropout", "ResNet50_32_dropout","ResNet50_224_dropout"):
         model = resnet50(weights= True)
         dropout_rate = 0.5 

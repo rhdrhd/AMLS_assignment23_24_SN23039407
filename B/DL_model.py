@@ -21,12 +21,12 @@ def select_model(model_name):
     num_classes =9
     if model_name == "DenseNet121":
         model = DenseNet121(spatial_dims=2, in_channels=3, out_channels=9)
-    elif model_name in ("ResNet18_28", "ResNet18_32"):
+    elif model_name in ("ResNet18_28", "ResNet18_32","ResNet18_224"):
         model = resnet18(weights= True)
         model.fc = nn.Linear(model.fc.in_features, num_classes)
 
 
-    elif model_name in ("ResNet18_28_dropout","ResNet18_32_dropout"):
+    elif model_name in ("ResNet18_28_dropout","ResNet18_32_dropout","ResNet18_224_dropout"):
         model = resnet18(weights= True)
         dropout_rate = 0.5 
         model.fc = nn.Sequential(
@@ -35,12 +35,12 @@ def select_model(model_name):
         )
 
 
-    elif model_name in ("ResNet50_28", "ResNet50_32"):
+    elif model_name in ("ResNet50_28", "ResNet50_32","ResNet50_224"):
         model = resnet50(weights= True)
         model.fc = nn.Linear(model.fc.in_features, num_classes)
 
 
-    elif model_name in ("ResNet50_28_dropout", "ResNet50_32_dropout"):
+    elif model_name in ("ResNet50_28_dropout", "ResNet50_32_dropout","ResNet50_224_dropout"):
         model = resnet50(weights= True)
         dropout_rate = 0.5 
         model.fc = nn.Sequential(
@@ -144,19 +144,18 @@ def train_model(model_name, num_epochs, lr, optimizer="Adam"):
         #    highest_val_accuracy = val_accuracy
         #    best_model_val_acc = model.state_dict()
             
+        #if auc > highest_auc:
+        #    best_epoch = epoch
+        #    highest_auc = auc
+        #    best_model_val_auc = model.state_dict()
+        #    torch.save(best_model_val_auc, f'B/pretrained_weights/best_model_val_auc_{model_name}.pth')
 
         if val_loss_epoch_avg < lowest_val_loss:
-            #best_epoch = epoch
+            best_epoch = epoch
             lowest_val_loss = val_loss_epoch_avg
             best_model_val_loss = model.state_dict()
             torch.save(best_model_val_loss, f'B/pretrained_weights/best_model_val_loss_{model_name}.pth')#    torch.save(best_model_val_acc, f'B/pretrained_weights/best_model_val_acc_{model_name}.pth')
         
-        if auc > highest_auc:
-            best_epoch = epoch
-            highest_auc = auc
-            best_model_val_auc = model.state_dict()
-            torch.save(best_model_val_auc, f'B/pretrained_weights/best_model_val_auc_{model_name}.pth')
-
         elif epoch - best_epoch > early_stop_thresh:
             print(f"Early stopped training at epoch {epoch}" )
             print(f"Best Epoch is {best_epoch}")
